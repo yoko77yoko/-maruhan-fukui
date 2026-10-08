@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b4f8a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="マルハン狙い台">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>マルハン狙い台</title>
+<style>
+*{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif;background:#f4f7fb;color:#17324d}
+header{background:#0b4f8a;color:#fff;padding:18px 16px 16px;position:sticky;top:0;z-index:5}
+h1{font-size:22px;margin:0 0 5px}.sub{font-size:12px;opacity:.9}
+main{max-width:680px;margin:auto;padding:14px 14px 32px}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 3px 12px rgba(0,0,0,.06)}
+label{display:block;font-size:13px;font-weight:700;margin-bottom:7px}
+select,button{width:100%;font:inherit;border-radius:11px;padding:12px;border:1px solid #ccd8e4;background:#fff}
+button{border:0;background:#0b4f8a;color:#fff;font-weight:700;margin-top:10px}
+button.secondary{background:#e9f1f8;color:#0b4f8a}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.tabs button{margin:0}.tabs button.active{background:#0b4f8a}.tabs button:not(.active){background:#edf2f7;color:#46627a}
+.rank{display:flex;gap:12px;align-items:center;border-top:1px solid #e7edf3;padding:13px 0}.rank:first-child{border-top:0}
+.num{font-size:22px;font-weight:800;width:34px}.machine{flex:1}.machine strong{display:block;font-size:16px}.reason{font-size:12px;color:#60788c;margin-top:4px}.score{font-weight:800;color:#0b4f8a}
+.note{font-size:12px;line-height:1.6;color:#60788c}
+.status{padding:10px 12px;border-radius:10px;background:#fff7df;font-size:12px;line-height:1.5}
+.hidden{display:none}
+footer{text-align:center;font-size:11px;color:#7b8b98;padding:10px}
+</style>
+</head>
+<body>
+<header><h1>🎰 マルハン狙い台</h1><div class="sub">福井3店舗・スロット／パチンコ分析ツール</div></header>
+<main>
+<div class="card">
+<label for="store">店舗</label>
+<select id="store">
+<option>マルハン福井舞屋店</option>
+<option>マルハン福井店</option>
+<option>マルハン福井大和田店</option>
+<option>3店舗まとめて</option>
+</select>
+</div>
+
+<div class="card">
+<div class="tabs">
+<button id="slotBtn" class="active" onclick="setType('slot')">スロット</button>
+<button id="pachiBtn" onclick="setType('pachi')">パチンコ</button>
+</div>
+<label for="machine">機種</label>
+<select id="machine"></select>
+<button onclick="showRanking()">今日の狙い台TOP3を見る</button>
+</div>
+
+<div id="result" class="card hidden">
+<h2 style="font-size:18px;margin:0 0 4px">今日の候補 TOP3</h2>
+<div class="note" id="resultNote"></div>
+<div id="ranking"></div>
+</div>
+
+<div class="card">
+<h3 style="margin:0 0 8px;font-size:16px">データ保存</h3>
+<div class="status">この試作版では、入力・取り込みデータをiPhone内に保存できる構成です。実際のマルハンデータ自動取得は、公式の利用条件を確認したうえで次の段階で接続します。</div>
+<button class="secondary" onclick="exportData()">保存データを書き出す</button>
+<button class="secondary" onclick="document.getElementById('file').click()">CSVデータを取り込む</button>
+<input id="file" type="file" accept=".csv,text/csv" style="display:none" onchange="importData(event)">
+</div>
+
+<div class="card">
+<h3 style="margin:0 0 8px;font-size:16px">ホーム画面への追加</h3>
+<p class="note">Safariでこのページを開き、「共有」→「ホーム画面に追加」→「ウェブアプリとして開く」→「追加」で、アプリのように起動できます。</p>
+</div>
+<footer>※ランキングは現在サンプル判定です。設定・勝敗を保証するものではありません。</footer>
+</main>
+<script>
+const slotMachines=["Lスマスロ北斗の拳","スマスロ モンキーターンV","L東京喰種","スマスロ ゴッドイーター リザレクション","Lジャグラー系"];
+const pachiMachines=["e北斗の拳10","P大海物語5","Pエヴァンゲリオン系","eリゼロ系","P牙狼系"];
+let type="slot";
+function setType(t){type=t;document.getElementById("slotBtn").classList.toggle("active",t==="slot");document.getElementById("pachiBtn").classList.toggle("active",t==="pachi");fillMachines();}
+function fillMachines(){const a=type==="slot"?slotMachines:pachiMachines;document.getElementById("machine").innerHTML=a.map(x=>`<option>${x}</option>`).join("");}
+function showRanking(){
+ const store=document.getElementById("store").value,m=document.getElementById("machine").value;
+ const seed=(Date.now()+m.length*31+store.length*17)%100;
+ const names=[m+" 001",m+" 002",m+" 003"];
+ const reasons=type==="slot"
+ ?["直近データの波形を重点評価","曜日傾向と直近推移を評価","台番号周辺の傾向を評価"]
+ :["直近の初当り・出玉推移を評価","過去データの安定度を評価","店舗内の相対傾向を評価"];
+ document.getElementById("resultNote").textContent=`${store} / ${m}　※現在はサンプルスコア`;
+ document.getElementById("ranking").innerHTML=names.map((n,i)=>`<div class="rank"><div class="num">${i+1}</div><div class="machine"><strong>${n}</strong><div class="reason">${reasons[i]}</div></div><div class="score">${78-i*7+(seed%7)}点</div></div>`).join("");
+ document.getElementById("result").classList.remove("hidden");
+}
+function exportData(){const data=localStorage.getItem("maruhanData")||"[]";const blob=new Blob([data],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="maruhan-data.json";a.click();URL.revokeObjectURL(a.href)}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{localStorage.setItem("maruhanData",r.result);alert("データを保存しました");};r.readAsText(f)}
+fillMachines();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"))}
+</script>
+</body>
+</html>
