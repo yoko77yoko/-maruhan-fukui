@@ -1,0 +1,11 @@
+{
+  "name": "マルハン狙い台",
+  "short_name": "マルハン狙い台",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f7fb",
+  "theme_color": "#0b4f8a",
+  "lang": "ja",
+  "description": "福井3店舗のスロット・パチンコ分析ツール"
+}
